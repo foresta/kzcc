@@ -1,7 +1,7 @@
 kzcc: kzcc.c
 
 test: kzcc
-		./test.sh
+	./test.sh
 
 clean:
-		rm -rf kzcc *.o *~ tmp*
+	rm -rf kzcc *.o *~ tmp*
