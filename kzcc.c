@@ -4,6 +4,10 @@
 #include <string.h>
 #include <stdarg.h>
 
+//
+// Token
+//
+
 // Value represented Token Type
 enum {
     TK_NUM = 256,   // Integer Token
@@ -17,9 +21,33 @@ typedef struct {
     char *input; // Token Text for Error Msg
 } Token;
 
+
+//
+// AST
+//
+
+// Value represented Node Type
+enum {
+    ND_NUM = 256,   // Type of Integer Node
+};
+
+// Type of AST Node
+typedef struct Node {
+    int type; // operator or ND_NUM
+    struct Node *lhs;   // left
+    struct Node *rhs;   // right
+    int value;          // used if type == ND_NUM
+} Node;
+
 // Tokenize result array
 //   Suppose that the number of tokens is 100 or less
 Token tokens[100];
+int pos = 0;
+
+
+Node *add();
+Node *mul();
+Node *term();
 
 void error(char *fmt, ...) {
     va_list ap;
@@ -27,6 +55,73 @@ void error(char *fmt, ...) {
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
+}
+
+
+Node *new_node(int type, Node *lhs, Node *rhs) {
+    Node *node = malloc(sizeof(Node));
+    node->type = type;
+    node->lhs = lhs;
+    node->rhs = rhs;
+    return node;
+}
+
+Node *new_number_node(int value) {
+    Node *node = malloc(sizeof(Node));
+    node->type = ND_NUM;
+    node->value = value;
+    return node;
+}
+
+int consume(int type) {
+    if (tokens[pos].type != type)
+        return 0;
+
+    pos++;
+    return 1;
+}
+
+
+Node *add() {
+    Node *node = mul();
+
+    for (;;) {
+        if (consume('+'))
+            node = new_node('+', node, mul());
+        else if (consume('-'))
+            node = new_node('-', node, mul());
+        else
+            return node;
+    }
+}
+
+Node *mul() {
+    Node* node = term();
+
+    for (;;) {
+        if (consume('*'))
+            node = new_node('*', node, term());
+        else if (consume('/'))
+            node = new_node('/', node, term());
+        else
+            return node;
+    }
+}
+
+
+Node *term() {
+    if (consume('(')) {
+        Node * node = add();
+        if (!consume(')'))
+            error("There is no ) corresponding to (: %s", tokens[pos].input);
+
+        return node;
+    }
+
+    if (tokens[pos].type == TK_NUM)
+        return new_number_node(tokens[pos++].value);
+
+    error("invalid token. no number and no '(': %s", tokens[pos].input);
 }
 
 void tokenize(char *p) {
@@ -39,7 +134,7 @@ void tokenize(char *p) {
         }
 
         // add and sub
-        if (*p == '+' || *p == '-') {
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
             tokens[i].type = *p;
             tokens[i].input = p;
             i++;
@@ -55,12 +150,44 @@ void tokenize(char *p) {
             continue;
         }
 
-        error("Can't tokenize: $s", p);
+        error("Can't tokenize: %s", p);
         exit(1);
     }
 
     tokens[i].type = TK_EOF;
     tokens[i].input = p;
+}
+
+
+void gen(Node* node) {
+    if (node->type == ND_NUM) {
+        printf("\tpush %d\n", node->value);
+        return;
+    }
+
+    gen(node->lhs);
+    gen(node->rhs);
+
+    printf("\tpop rdi\n");
+    printf("\tpop rax\n");
+
+    switch (node->type) {
+        case '+':
+            printf("\tadd rax, rdi\n");
+            break;
+        case '-':
+            printf("\tsub rax, rdi\n");
+            break;
+        case '*':
+            printf("\tmul rdi\n");
+            break;
+        case '/':
+            printf("\tmov rdx, 0\n");
+            printf("\tdiv rdi\n");
+            break;
+    }
+
+    printf("\tpush rax\n");
 }
 
 int main(int argc, char **argv) {
@@ -72,43 +199,20 @@ int main(int argc, char **argv) {
     // Tokenize
     tokenize(argv[1]);
 
-    // print first parts of assembler.
+    // Parse and generate AST
+    Node *node = add();
+
+    // Print first parts of assembler.
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
-    
-    if (tokens[0].type != TK_NUM)
-        error("first term is not number");
-    
-    printf("\tmov rax, %d\n", tokens[0].value);
 
-    int i = 1;
-    while (tokens[i].type != TK_EOF) {
-        if (tokens[i].type == '+') {
-            i++;
-            if (tokens[i].type != TK_NUM)
-                error("Unexpected token: %s", tokens[i].input);
-
-            printf("\tadd rax, %d\n", tokens[i].value);
-            i++;
-            continue;
-        }
-
-        if (tokens[i].type == '-') {
-            i++;
-            if (tokens[i].type != TK_NUM)
-                error("Unexpected token: %s", tokens[i].input);
-
-            printf("\tsub rax, %d\n", tokens[i].value);
-            i++;
-            continue;
-        }
-
-        error("Unexpected token: %s", tokens[i].input);
-    }
+    // generate assembly code from AST
+    gen(node);
 
     // print last parts of assembler
+    printf("\tpop rax\n");
     printf("\tret\n");
     
     return 0;
