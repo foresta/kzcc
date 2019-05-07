@@ -47,6 +47,7 @@ int pos = 0;
 
 Node *add();
 Node *mul();
+Node *unary();
 Node *term();
 
 void error(char *fmt, ...) {
@@ -96,16 +97,26 @@ Node *add() {
 }
 
 Node *mul() {
-    Node* node = term();
+    Node* node = unary();
 
     for (;;) {
         if (consume('*'))
-            node = new_node('*', node, term());
+            node = new_node('*', node, unary());
         else if (consume('/'))
-            node = new_node('/', node, term());
+            node = new_node('/', node, unary());
         else
             return node;
     }
+}
+
+Node *unary() {
+    if (consume('+'))
+        return term();
+
+    if (consume('-'))
+        return new_node('-', new_number_node(0), term());
+
+    return term();
 }
 
 
