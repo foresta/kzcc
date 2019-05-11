@@ -80,9 +80,16 @@ typedef struct Node {
 } Node;
 
 // Tokenize result array
-//   Suppose that the number of tokens is 100 or less
-Token tokens[100];
+Vector *tokens;
 int pos = 0;
+
+Token *get_token(int index) {
+    return (Token *)tokens->data[index];
+}
+
+Token *new_token() {
+    return calloc(1, sizeof(Token));
+}
 
 Node *equality();
 Node *relational();
@@ -116,7 +123,7 @@ Node *new_number_node(int value) {
 }
 
 int consume(int type) {
-    if (tokens[pos].type != type)
+    if (get_token(pos)->type != type)
         return 0;
 
     pos++;
@@ -194,19 +201,18 @@ Node *term() {
     if (consume('(')) {
         Node * node = add();
         if (!consume(')'))
-            error("There is no ) corresponding to (: %s", tokens[pos].input);
+            error("There is no ) corresponding to (: %s", get_token(pos)->input);
 
         return node;
     }
 
-    if (tokens[pos].type == TK_NUM)
-        return new_number_node(tokens[pos++].value);
+    if (get_token(pos)->type == TK_NUM)
+        return new_number_node(get_token(pos++)->value);
 
-    error("invalid token. no number and no '(': %s", tokens[pos].input);
+    error("invalid token. no number and no '(': %s", get_token(pos)->input);
 }
 
 void tokenize(char *p) {
-    int i = 0;
     while (*p) {
         // skip space
         if (isspace(*p)) {
@@ -216,15 +222,16 @@ void tokenize(char *p) {
 
         // Multi character symbol
         int multi_character_found = 0;
-        for (int symbol_i = 0; symbols[symbol_i].name; symbol_i++) {
-            char *name = symbols[symbol_i].name;
+        for (int i = 0; symbols[i].name; i++) {
+            char *name = symbols[i].name;
             int name_length = strlen(name);
             int match = !strncmp(p, name, name_length); // 文字列比較 (一致したら0が返ってくるため'!'が必要)
             if (!match) continue;
 
-            tokens[i].type = symbols[symbol_i].type; 
-            tokens[i].input = name;
-            i++;
+            Token *token = new_token();
+            token->type = symbols[i].type;
+            token->input = name;
+            vec_push(tokens, token);
             p += name_length;
 
             multi_character_found = 1;
@@ -234,21 +241,21 @@ void tokenize(char *p) {
 
         // Single charactor symbol
         if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>') {
-            tokens[i].type = *p;
-            tokens[i].input = p;
-            i++;
+            Token *token = new_token(); 
+            token->type = *p;
+            token->input = p;
+            vec_push(tokens, token);
             p++;
             
             continue;
         }
 
         if (isdigit(*p)) {
-            tokens[i].type = TK_NUM;
-            tokens[i].input = p;
-            tokens[i].value = strtol(p, &p, 10);
-
-
-            i++;
+            Token *token = new_token();
+            token->type = TK_NUM;
+            token->input = p;
+            token->value = strtol(p, &p, 10);
+            vec_push(tokens, token);
             continue;
         }
 
@@ -256,8 +263,10 @@ void tokenize(char *p) {
         exit(1);
     }
 
-    tokens[i].type = TK_EOF;
-    tokens[i].input = p;
+    Token *token = new_token(); 
+    token->type = TK_EOF;
+    token->input = p;
+    vec_push(tokens, token);
 }
 
 
@@ -354,6 +363,8 @@ int main(int argc, char **argv) {
         runtest();
         return 0;
     }
+
+    tokens = new_vector();
 
     // Tokenize
     tokenize(argv[1]);
