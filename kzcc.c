@@ -11,7 +11,19 @@
 // Value represented Token Type
 enum {
     TK_NUM = 256,   // Integer Token
+    TK_EQ,          // == Equal
+    TK_NE,          // != Not Equal
+    TK_LE,          // <= Less than or Equal
+    TK_GE,          // >= Greater than or Equal
     TK_EOF,         // End of File Token
+};
+
+static struct {
+    char *name;
+    int type;
+} symbols[] = {
+    { "==", TK_EQ }, { "!=", TK_NE }, { "<=", TK_LE }, { ">=", TK_GE }, 
+    { NULL, 0 },
 };
 
 // Type of Token
@@ -44,7 +56,8 @@ typedef struct Node {
 Token tokens[100];
 int pos = 0;
 
-
+Node *equality();
+Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
@@ -82,6 +95,35 @@ int consume(int type) {
     return 1;
 }
 
+Node *equality() {
+    Node *node = relational();
+
+    for (;;) {
+        if (consume(TK_EQ))
+            node = new_node(TK_EQ, node, relational());
+        else if (consume(TK_NE))
+            node = new_node(TK_NE, node, relational());
+        else
+            return node;
+    }
+}
+
+Node *relational() {
+    Node *node = add(); 
+
+    for (;;) {
+        if (consume('<'))
+            node = new_node('<', node, add());
+        else if (consume('>'))
+            node = new_node('<', add(), node); // 左右のnodeを入れ替えて、'<' のみでパースするようにする
+        if (consume(TK_LE))
+            node = new_node(TK_LE, node, add());
+        else if (consume(TK_GE))
+            node = new_node(TK_GE, add(), node); // swap lhs and rhs
+        else 
+            return node;
+    }
+}
 
 Node *add() {
     Node *node = mul();
@@ -144,12 +186,31 @@ void tokenize(char *p) {
             continue;
         }
 
-        // add and sub
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
+        // Multi character symbol
+        int multi_character_found = 0;
+        for (int symbol_i = 0; symbols[symbol_i].name; symbol_i++) {
+            char *name = symbols[symbol_i].name;
+            int name_length = strlen(name);
+            int match = !strncmp(p, name, name_length); // 文字列比較 (一致したら0が返ってくるため'!'が必要)
+            if (!match) continue;
+
+            tokens[i].type = symbols[symbol_i].type; 
+            tokens[i].input = name;
+            i++;
+            p += name_length;
+
+            multi_character_found = 1;
+        }
+        if (multi_character_found) continue;
+
+
+        // Single charactor symbol
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>') {
             tokens[i].type = *p;
             tokens[i].input = p;
             i++;
             p++;
+            
             continue;
         }
 
@@ -157,6 +218,8 @@ void tokenize(char *p) {
             tokens[i].type = TK_NUM;
             tokens[i].input = p;
             tokens[i].value = strtol(p, &p, 10);
+
+
             i++;
             continue;
         }
@@ -196,22 +259,43 @@ void gen(Node* node) {
             printf("\tmov rdx, 0\n");
             printf("\tdiv rdi\n");
             break;
+        case TK_EQ:
+            printf("\tcmp rax, rdi\n");
+            printf("\tsete al\n");
+            printf("\tmovzb rax, al\n");
+            break;
+        case TK_NE:
+            printf("\tcmp rax, rdi\n");
+            printf("\tsetne al\n");
+            printf("\tmovzb rax, al\n");
+            break;
+        case '<':
+        case '>':   // Always < because swap lhs and rhs if operator is >
+            printf("\tcmp rax, rdi\n");
+            printf("\tsetl al\n");
+            printf("\tmovzb rax, al\n");
+            break;
+        case TK_LE:
+        case TK_GE: // Always <= because swap lhs and rhs if operator is >=
+            printf("\tcmp rax, rdi\n");
+            printf("\tsetle al\n");
+            printf("\tmovzb rax, al\n");
+            break;
+
     }
 
     printf("\tpush rax\n");
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "引数の個数がただしくありません\n");
-        return 1;
-    }
+    if (argc != 2)
+        error("引数の個数がただしくありません");
 
     // Tokenize
     tokenize(argv[1]);
 
     // Parse and generate AST
-    Node *node = add();
+    Node *node = equality();
 
     // Print first parts of assembler.
     printf(".intel_syntax noprefix\n");
