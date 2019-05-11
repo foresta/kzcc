@@ -3,6 +3,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdint.h>
+
+//
+// Vector
+//
+
+typedef struct {
+    void **data;
+    int capacity;
+    int length;
+} Vector;
+
+Vector *new_vector() {
+    int initial_capacity = 16;
+    Vector *vec = malloc(sizeof(Vector));
+    vec->data = malloc(sizeof(void *) * initial_capacity);
+    vec->capacity = initial_capacity;
+    vec->length = 0;
+    return vec;
+}
+
+void vec_push(Vector *vec, void *element) {
+    if (vec->capacity == vec->length) {
+        vec->capacity *= 2;
+        vec->data = realloc(vec->data, sizeof(void *) * vec->capacity);
+    }
+    vec->data[vec->length++] = element;
+}
 
 //
 // Token
@@ -287,9 +315,45 @@ void gen(Node* node) {
     printf("\tpush rax\n");
 }
 
+//
+// Test
+//
+
+void expect(int line, int expected, int actual) {
+    if (expected == actual)
+        return;
+
+    fprintf(stderr, "%d: %d expected, but got %d\n", line, expected, actual);
+    exit(1);
+}
+
+void runtest() {
+    Vector *vec = new_vector();
+    expect(__LINE__, 0, vec->length);
+
+    for (int i = 0; i < 100; i++)
+        vec_push(vec, (void *)(intptr_t)i);
+
+    expect(__LINE__, 100, vec->length);
+    expect(__LINE__, 0, (long)vec->data[0]);
+    expect(__LINE__, 50, (long)vec->data[50]);
+    expect(__LINE__, 99, (long)vec->data[99]);
+
+    printf("OK\n");
+}
+
+//
+// Main
+//
+
 int main(int argc, char **argv) {
     if (argc != 2)
         error("引数の個数がただしくありません");
+
+    if (argc == 2 && !strcmp(argv[1], "-test")) {
+        runtest();
+        return 0;
+    }
 
     // Tokenize
     tokenize(argv[1]);
@@ -312,3 +376,5 @@ int main(int argc, char **argv) {
     
     return 0;
 }
+
+
