@@ -22,6 +22,7 @@ Token *new_token() {
 
 
 void tokenize(char *p) {
+
     while (*p) {
         // skip space
         if (isspace(*p)) {
@@ -49,7 +50,8 @@ void tokenize(char *p) {
 
 
         // Single charactor symbol
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>' || *p == ';') {
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>' || *p == ';' || *p == '=') {
+
             Token *token = new_token(); 
             token->type = *p;
             token->input = p;
@@ -61,6 +63,7 @@ void tokenize(char *p) {
 
         // Variables (one character and a~z)
         if ('a' <= *p && *p <= 'z') {
+
             Token* token = new_token();
             token->type = TK_IDENT;
             token->input = p;
@@ -76,6 +79,7 @@ void tokenize(char *p) {
             token->input = p;
             token->value = strtol(p, &p, 10);
             vec_push(tokens, token);
+
             continue;
         }
 

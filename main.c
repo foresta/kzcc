@@ -41,6 +41,7 @@ int main(int argc, char **argv) {
     printf("\tsub rsp, 208\n");
 
     for (int i = 0; code[i]; i++) {
+
         // generate assembly code from AST
         generate_assembly_code(code[i]);
 

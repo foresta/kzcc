@@ -29,6 +29,7 @@ void generate_assembly_code(Node *node) {
         // load lvalue from address
         printf("\tmov rax, [rax]\n");
         printf("\tpush rax\n");
+        return;
     }
 
     if (node->type == '=') {
@@ -45,7 +46,7 @@ void generate_assembly_code(Node *node) {
         printf("\tpop rax\n");
 
         // store rvalue to lvalue address
-        printf("\tmov [rax], rdi");
+        printf("\tmov [rax], rdi\n");
 
         // stack rvalue
         // because a = 1 is return 1.
