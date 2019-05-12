@@ -1,5 +1,17 @@
 #include "kzcc.h"
 
+// Parse Cursor
+int pos = 0;
+Node *code[100];
+
+int consume(int type) {
+    if (get_token(pos)->type != type)
+        return 0;
+
+    pos++;
+    return 1;
+}
+
 Node *new_node(int type, Node *lhs, Node *rhs) {
     Node *node = malloc(sizeof(Node));
     node->type = type;
@@ -15,12 +27,33 @@ Node *new_number_node(int value) {
     return node;
 }
 
-int consume(int type) {
-    if (get_token(pos)->type != type)
-        return 0;
+Node *new_ident_node(char name) {
+    Node *node = malloc(sizeof(Node));
+    node->type = ND_IDENT;
+    node->name = name;
+    return node;
+}
 
-    pos++;
-    return 1;
+void program() {
+    int i = 0;
+    while (get_token(pos)->type != TK_EOF)
+        code[i++] = stmt();
+    code[i] = NULL;
+}
+
+Node* stmt() {
+    Node *node = assign();
+    if (!consume(';'))
+        error("';' is not found: %s", get_token(pos)->input);
+    return node;
+}
+
+
+Node* assign() {
+    Node *node = equality();
+    if (consume('='))
+        node = new_node('=', node, assign());
+    return node;
 }
 
 Node *equality() {
@@ -101,6 +134,9 @@ Node *term() {
 
     if (get_token(pos)->type == TK_NUM)
         return new_number_node(get_token(pos++)->value);
+
+    if (get_token(pos)->type == TK_IDENT)
+        return new_ident_node(*get_token(pos++)->input);
 
     error("invalid token. no number and no '(': %s", get_token(pos)->input);
     return NULL;

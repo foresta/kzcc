@@ -3,9 +3,6 @@
 // Tokenize result array
 Vector *tokens;
 
-// Tokenize Cursor
-int pos = 0;
-
 // Tokenize Symbol
 const Symbol symbols[5] = {
     { "==", TK_EQ },
@@ -52,9 +49,20 @@ void tokenize(char *p) {
 
 
         // Single charactor symbol
-        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>') {
+        if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '<' || *p == '>' || *p == ';') {
             Token *token = new_token(); 
             token->type = *p;
+            token->input = p;
+            vec_push(tokens, token);
+            p++;
+            
+            continue;
+        }
+
+        // Variables (one character and a~z)
+        if ('a' <= *p && *p <= 'z') {
+            Token* token = new_token();
+            token->type = TK_IDENT;
             token->input = p;
             vec_push(tokens, token);
             p++;

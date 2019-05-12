@@ -8,26 +8,7 @@
 
 #include "container.h"
 #include "tokenizer.h"
-
-// AST
-
-// Value represented Node Type
-enum {
-    ND_NUM = 256,   // Type of Integer Node
-};
-
-// Type of AST Node
-typedef struct Node {
-    int type; // operator or ND_NUM
-    struct Node *lhs;   // left
-    struct Node *rhs;   // right
-    int value;          // used if type == ND_NUM
-} Node;
-
-
-//
-// Variables
-//
+#include "parser.h"
 
 // unitily.c
 noreturn void error(char *fmt, ...) __attribute__((format(printf,1,2)));
@@ -39,13 +20,4 @@ void expect(int line, int expected, int actual);
 void generate_assembly_code(Node* node);
 
 
-// parser.c
-Node *new_node(int type, Node *lhs, Node *rhs);
-Node *new_number_node(int value);
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *term();
 

@@ -26,19 +26,33 @@ int main(int argc, char **argv) {
     tokenize(argv[1]);
 
     // Parse and generate AST
-    Node *node = equality();
+    // Node* code[100] is generated
+    program();
 
     // Print first parts of assembler.
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
 
+    // Prologue
+    // allocate memory for variable (a to z, 26)
+    printf("\tpush rbp\n");
+    printf("\tmov rbp, rsp\n");
+    printf("\tsub rsp, 208\n");
 
-    // generate assembly code from AST
-    generate_assembly_code(node);
+    for (int i = 0; code[i]; i++) {
+        // generate assembly code from AST
+        generate_assembly_code(code[i]);
 
+        // Pop skack so that it doesn't overflow, 
+        // because one value remain on the stack as a result of expression evaluation.
+        printf("\tpop rax\n");
+    }
+
+    // Epilogue
     // print last parts of assembler
-    printf("\tpop rax\n");
+    printf("\tmov rsp, rbp\n");
+    printf("\tpop rbp\n");
     printf("\tret\n");
     
     return 0;

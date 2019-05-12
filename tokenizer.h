@@ -2,6 +2,7 @@
 // Value represented Token Type
 enum {
     TK_NUM = 256,   // Integer Token
+    TK_IDENT,      // [a-z]
     TK_EQ,          // == Equal
     TK_NE,          // != Not Equal
     TK_LE,          // <= Less than or Equal
