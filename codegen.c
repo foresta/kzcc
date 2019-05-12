@@ -1,5 +1,13 @@
 #include "kzcc.h"
 
+void print_mnemonic(char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    printf("\t");
+    vprintf(fmt, ap);
+    printf("\n");
+}
+
 void generate_lvalue(Node *node) {
     if (node->type != ND_IDENT)
         error("lvalue is not variables. ");
@@ -7,16 +15,16 @@ void generate_lvalue(Node *node) {
     // varables is a to z 
     int offset = ('z' - node->name + 1) * 8;
     // load base pointer to rax
-    printf("\tmov rax, rbp\n");
+    print_mnemonic("mov rax, rbp");
     // calcurate variable address. each variable (a to z)
-    printf("\tsub rax, %d\n", offset);
+    print_mnemonic("sub rax, %d", offset);
     // add variable pointer addres to stack
-    printf("\tpush rax\n");
+    print_mnemonic("push rax");
 }
 
 void generate_assembly_code(Node *node) {
     if (node->type == ND_NUM) {
-        printf("\tpush %d\n", node->value);
+        print_mnemonic("push %d", node->value);
         return;
     }
 
@@ -25,10 +33,10 @@ void generate_assembly_code(Node *node) {
         
         // stack lvalue address
         generate_lvalue(node);
-        printf("\tpop rax\n");
+        print_mnemonic("pop rax");
         // load lvalue from address
-        printf("\tmov rax, [rax]\n");
-        printf("\tpush rax\n");
+        print_mnemonic("mov rax, [rax]");
+        print_mnemonic("push rax");
         return;
     }
 
@@ -40,66 +48,66 @@ void generate_assembly_code(Node *node) {
         generate_assembly_code(node->rhs);
 
         // pop rvalue
-        printf("\tpop rdi\n");
+        print_mnemonic("pop rdi");
 
         // pop lvalue
-        printf("\tpop rax\n");
+        print_mnemonic("pop rax");
 
         // store rvalue to lvalue address
-        printf("\tmov [rax], rdi\n");
+        print_mnemonic("mov [rax], rdi");
 
         // stack rvalue
         // because a = 1 is return 1.
-        printf("\tpush rdi\n");
+        print_mnemonic("push rdi");
         return;
     }
 
     generate_assembly_code(node->lhs);
     generate_assembly_code(node->rhs);
 
-    printf("\tpop rdi\n");
-    printf("\tpop rax\n");
+    print_mnemonic("pop rdi");
+    print_mnemonic("pop rax");
 
     switch (node->type) {
         case '+':
-            printf("\tadd rax, rdi\n");
+            print_mnemonic("add rax, rdi");
             break;
         case '-':
-            printf("\tsub rax, rdi\n");
+            print_mnemonic("sub rax, rdi");
             break;
         case '*':
-            printf("\tmul rdi\n");
+            print_mnemonic("mul rdi");
             break;
         case '/':
-            printf("\tmov rdx, 0\n");
-            printf("\tdiv rdi\n");
+            print_mnemonic("mov rdx, 0");
+            print_mnemonic("div rdi");
             break;
         case TK_EQ:
-            printf("\tcmp rax, rdi\n");
-            printf("\tsete al\n");
-            printf("\tmovzb rax, al\n");
+            print_mnemonic("cmp rax, rdi");
+            print_mnemonic("sete al");
+            print_mnemonic("movzb rax, al");
             break;
         case TK_NE:
-            printf("\tcmp rax, rdi\n");
-            printf("\tsetne al\n");
-            printf("\tmovzb rax, al\n");
+            print_mnemonic("cmp rax, rdi");
+            print_mnemonic("setne al");
+            print_mnemonic("movzb rax, al");
             break;
         case '<':
         case '>':   // Always < because swap lhs and rhs if operator is >
-            printf("\tcmp rax, rdi\n");
-            printf("\tsetl al\n");
-            printf("\tmovzb rax, al\n");
+            print_mnemonic("cmp rax, rdi");
+            print_mnemonic("setl al");
+            print_mnemonic("movzb rax, al");
             break;
         case TK_LE:
         case TK_GE: // Always <= because swap lhs and rhs if operator is >=
-            printf("\tcmp rax, rdi\n");
-            printf("\tsetle al\n");
-            printf("\tmovzb rax, al\n");
+            print_mnemonic("cmp rax, rdi");
+            print_mnemonic("setle al");
+            print_mnemonic("movzb rax, al");
             break;
 
     }
 
     // stack result
-    printf("\tpush rax\n");
+    print_mnemonic("push rax");
 }
 
