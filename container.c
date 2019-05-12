@@ -39,3 +39,41 @@ void test_vector() {
     printf("OK\n");
 }
 
+
+//
+// Map
+//
+Map *new_map(void) {
+    Map *map = malloc(sizeof(Map));
+    map->keys = new_vector();
+    map->values = new_vector();
+    return map;
+}
+
+void map_insert(Map *map, char *key, void *val) {
+    vec_push(map->keys, key);
+    vec_push(map->values, val);
+}
+
+void *map_get(Map* map, char *key) {
+    for (int i = map->keys->length - 1; i >= 0; i--)
+        if (strcmp(map->keys->data[i], key) == 0) 
+            return map->values->data[i];
+    return NULL;
+}
+
+void test_map(void) {
+    Map* map = new_map();
+    expect(__LINE__, 0, (long)map_get(map, "foo"));
+
+    map_insert(map, "foo", (void *)2);
+    expect(__LINE__, 2, (long)map_get(map, "foo"));
+
+    map_insert(map, "bar", (void *)4);
+    expect(__LINE__, 4, (long)map_get(map, "bar"));
+
+    map_insert(map, "foo", (void *)6);
+    expect(__LINE__, 6, (long)map_get(map, "foo"));
+}
+
+

@@ -5,6 +5,7 @@
 //
 void runtest() {
     test_vector();
+    test_map();
 }
 
 //
