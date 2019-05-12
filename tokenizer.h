@@ -7,6 +7,7 @@ enum {
     TK_NE,          // != Not Equal
     TK_LE,          // <= Less than or Equal
     TK_GE,          // >= Greater than or Equal
+    TK_RETURN,      // return
     TK_EOF,         // End of File Token
 };
 
@@ -22,6 +23,12 @@ typedef struct {
     char *name;
     int type;
 } Symbol;
+
+// Keyword
+typedef struct {
+    char *name;
+    int type;
+} Keyword;
 
 Token *get_token(int index);
 Token *new_token(void);

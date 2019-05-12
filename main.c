@@ -8,6 +8,17 @@ void runtest() {
 }
 
 //
+// Debug
+//
+void ast_debug() {
+    debug("=====[print ast]=====");
+    for (int i = 0; code[i]; i++) {
+        print_ast(code[i]);
+    }
+    debug("=====================");
+}
+
+//
 // Main
 //
 
@@ -21,6 +32,7 @@ int main(int argc, char **argv) {
     }
 
     tokens = new_vector();
+
 
     // Tokenize
     tokenize(argv[1]);

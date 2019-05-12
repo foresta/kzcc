@@ -28,6 +28,17 @@ void generate_assembly_code(Node *node) {
         return;
     }
 
+    if (node->type == ND_RETURN) {
+        generate_assembly_code(node->lhs);
+
+        print_mnemonic("pop rax");
+        print_mnemonic("mov rsp, rbp");
+        print_mnemonic("pop rbp");
+        print_mnemonic("ret");
+
+        return;
+    }
+
     if (node->type == ND_IDENT) {
         // load variables
         

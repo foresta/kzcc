@@ -45,5 +45,8 @@ try 1 "4 <= 4;"
 try 0 "4 <= 2;"
 try 5 "a = 5; a;"
 try 10 "a=7; b = 5-2; a+b;"
+try 4 "return 4;"
+try 10 "return 4 + 6;"
+try 15 "a = 10; return a + 5;"
 
 echo OK

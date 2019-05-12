@@ -12,9 +12,13 @@
 
 // unitily.c
 noreturn void error(char *fmt, ...) __attribute__((format(printf,1,2)));
+void debug(char *fmt, ...) __attribute__((format(printf,1,2)));
 
 // test_utility.c
 void expect(int line, int expected, int actual);
+
+// debug_util.c
+void print_ast(Node *node);
 
 // codegen.c
 void generate_assembly_code(Node* node);

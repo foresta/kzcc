@@ -4,6 +4,11 @@
 enum {
     ND_NUM = 256,   // Type of Integer Node
     ND_IDENT,       // Type of Identifier Node
+    ND_EQ,          // Type of ==
+    ND_NE,          // Type of !=
+    ND_LE,          // Type of <=
+    ND_GE,          // Type of >=
+    ND_RETURN,      // Type of Return Node
 };
 
 // Type of AST Node

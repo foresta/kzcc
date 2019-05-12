@@ -12,6 +12,11 @@ const Symbol symbols[5] = {
     { NULL, 0 },
 };
 
+const Keyword keywords[2] = {
+    { "return", TK_RETURN },
+    { NULL, 0 },
+};
+
 Token *get_token(int index) {
     return (Token *)tokens->data[index];
 }
@@ -20,15 +25,42 @@ Token *new_token() {
     return calloc(1, sizeof(Token));
 }
 
+int is_alphanumeric(char c) {
+    return ('a' <= c && c <= 'z') ||
+           ('A' <= c && c <= 'Z') ||
+           ('0' <= c && c <= '9') ||
+           (c == '_');
+}
 
 void tokenize(char *p) {
-
     while (*p) {
         // skip space
         if (isspace(*p)) {
             p++;
             continue;
         }
+
+        // Keyword
+        int keyword_found = 0;
+        for (int i = 0; keywords[i].name; i++) {
+            char *name = keywords[i].name;
+            int type = keywords[i].type;
+            int name_length = strlen(name);
+
+            int match = !strncmp(p, name, name_length);
+            if (!match) continue;
+            // non alphanumeric character after keywords.
+            if (is_alphanumeric(p[name_length])) continue;
+
+            Token *token = new_token();
+            token->type = type;
+            token->input = name;
+            vec_push(tokens, token);
+            p += name_length;
+
+            keyword_found = 1; 
+        }
+        if (keyword_found) continue;
 
         // Multi character symbol
         int multi_character_found = 0;

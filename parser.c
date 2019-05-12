@@ -34,6 +34,13 @@ Node *new_ident_node(char name) {
     return node;
 }
 
+Node* new_return_node(Node *lhs) {
+    Node *node = malloc(sizeof(Node));
+    node->type = ND_RETURN;
+    node->lhs = lhs;
+    return node;
+}
+
 void program() {
     int i = 0;
     while (get_token(pos)->type != TK_EOF)
@@ -41,15 +48,21 @@ void program() {
     code[i] = NULL;
 }
 
-Node* stmt() {
-    Node *node = assign();
+Node *stmt() {
+    Node *node;
+    if (consume(TK_RETURN)) {
+        node = new_return_node(assign());
+    } else {
+        node = assign();
+    }
+
     if (!consume(';'))
         error("';' is not found: %s", get_token(pos)->input);
     return node;
 }
 
 
-Node* assign() {
+Node *assign() {
     Node *node = equality();
     if (consume('='))
         node = new_node('=', node, assign());
@@ -61,9 +74,9 @@ Node *equality() {
 
     for (;;) {
         if (consume(TK_EQ))
-            node = new_node(TK_EQ, node, relational());
+            node = new_node(ND_EQ, node, relational());
         else if (consume(TK_NE))
-            node = new_node(TK_NE, node, relational());
+            node = new_node(ND_NE, node, relational());
         else
             return node;
     }
@@ -78,9 +91,9 @@ Node *relational() {
         else if (consume('>'))
             node = new_node('<', add(), node); // 左右のnodeを入れ替えて、'<' のみでパースするようにする
         if (consume(TK_LE))
-            node = new_node(TK_LE, node, add());
+            node = new_node(ND_LE, node, add());
         else if (consume(TK_GE))
-            node = new_node(TK_GE, add(), node); // swap lhs and rhs
+            node = new_node(ND_GE, add(), node); // swap lhs and rhs
         else 
             return node;
     }
